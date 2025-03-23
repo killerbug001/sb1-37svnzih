@@ -17,52 +17,28 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      // Validate password length
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
-      }
-
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password.trim(),
-        options: {
-          data: {
-            full_name: fullName.trim(),
-            user_type: userType,
-          },
-        },
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
       });
 
-      if (signUpError) {
-        throw signUpError;
-      }
+      if (signUpError) throw signUpError;
 
-      if (data.user) {
+      if (user) {
         const { error: profileError } = await supabase.from('profiles').insert([
           {
-            id: data.user.id,
-            full_name: fullName.trim(),
+            id: user.id,
+            full_name: fullName,
             user_type: userType,
           },
         ]);
 
-        if (profileError) {
-          // If profile creation fails, delete the auth user
-          await supabase.auth.admin.deleteUser(data.user.id);
-          throw profileError;
-        }
+        if (profileError) throw profileError;
 
-        // Registration successful
-        setError(null);
         navigate('/login');
       }
     } catch (err) {
-      console.error('Registration error:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'An error occurred during registration. Please try again.'
-      );
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -114,11 +90,7 @@ const Register: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-dark-bg dark:border-dark-border dark:text-dark-text"
             required
-            minLength={6}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            Password must be at least 6 characters long
-          </p>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Account Type</label>

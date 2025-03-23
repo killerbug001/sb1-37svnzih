@@ -15,39 +15,26 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password.trim(),
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (signInError) {
-        throw signInError;
-      }
+      if (error) throw error;
 
-      if (data.user) {
-        const { data: profile, error: profileError } = await supabase
+      if (user) {
+        const { data: profile } = await supabase
           .from('profiles')
           .select('user_type')
-          .eq('id', data.user.id)
+          .eq('id', user.id)
           .single();
-
-        if (profileError) {
-          throw profileError;
-        }
 
         if (profile) {
           navigate(profile.user_type === 'employer' ? '/employer' : '/employee');
-        } else {
-          throw new Error('Profile not found');
         }
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Invalid email or password. Please try again.'
-      );
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

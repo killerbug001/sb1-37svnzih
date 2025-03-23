@@ -14,13 +14,13 @@ const AuthLayout: React.FC = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('user_type')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle(); // Changed from single() to maybeSingle()
 
-        if (profile) {
+        if (profile && !error) {
           navigate(profile.user_type === 'employer' ? '/employer' : '/employee');
         }
       }
